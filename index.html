@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LMSW Exam Flashcards</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f8fa;
+      color: #333;
+      line-height: 1.6;
+    }
+    
+    h1 {
+      color: #2c3e50;
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 2rem;
+    }
+    
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .domain-selector {
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+      width: 350px;
+      font-size: 1rem;
+    }
+    
+    .flashcard-container {
+      height: 550px;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    
+    .flashcard {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      perspective: 1000px;
+    }
+    
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      text-align: center;
+      transition: transform 0.7s;
+      transform-style: preserve-3d;
+    }
+    
+    .flashcard.flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+    
+    .card-front,
+    .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    
+    .card-front {
+      z-index: 2;
+      background: linear-gradient(to bottom, #ffffff, #f8f9fa);
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #e6e6e6;
+    }
+    
+    .flashcard.flipped .card-front {
+      pointer-events: none;
+    }
+    
+    .front-header {
+      background-color: #3498db;
+      color: white;
+      padding: 15px;
+      font-weight: 500;
+      font-size: 1.2rem;
+      text-align: center;
+    }
+    
+    .card-type {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background-color: rgba(52, 152, 219, 0.85);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.9em;
+      font-weight: 500;
+      z-index: 3;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .question-container {
+      background-color: #edf7fd;
+      padding: 25px 30px;
+      margin: 20px;
+      text-align: left;
+      flex-grow: 1;
+      border-radius: 10px;
+      box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
+      position: relative;
+      border-left: 5px solid #3498db;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .question-text {
+      font-weight: 500;
+      font-size: 1.2em;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .option {
+      padding: 12px 15px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    
+    .option:hover {
+      box-shadow: 0 3px 7px rgba(0,0,0,0.1);
+    }
+    
+    .option-correct {
+      background-color: rgba(46, 204, 113, 0.2);
+      border-left: 5px solid #2ecc71;
+    }
+    
+    .option-incorrect {
+      background-color: rgba(231, 76, 60, 0.2);
+      border-left: 5px solid #e74c3c;
+    }
+    
+    .card-back {
+      transform: rotateY(180deg);
+      background: white;
+      z-index: 1;
+      border: 1px solid #e6e6e6;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    
+    .flashcard.flipped .card-back {
+      pointer-events: auto;
+      z-index: 2;
+    }
+    
+    .answer-header {
+      background-color: #3498db;
+      color: white;
+      padding: 15px;
+      font-weight: bold;
+      font-size: 1.3em;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    
+    .content-wrapper {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      height: calc(100% - 55px);
+    }
+    
+    .answer-content {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow-y: scroll;
+      -webkit-overflow-scrolling: touch;
+      padding: 25px 30px;
+      text-align: left;
+      overscroll-behavior: contain;
+    }
+    
+    .section-title {
+      font-weight: bold;
+      margin: 20px 0 15px 0;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 8px;
+      color: #2c3e50;
+      font-size: 1.2em;
+    }
+    
+    .section-title:first-child {
+      margin-top: 0;
+    }
+    
+    .card-back ul,
+    .card-back ol {
+      padding-left: 25px;
+      margin: 15px 0;
+    }
+    
+    .card-back li {
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+    
+    .key-term {
+      font-weight: bold;
+      color: #e74c3c;
+    }
+    
+    .btn {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1em;
+      transition: all 0.2s ease;
+      font-weight: 500;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .btn:hover {
+      background-color: #2980b9;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .btn:active {
+      transform: translateY(0);
+    }
+    
+    .navigation {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+    
+    .card-counter {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 0.9em;
+      color: #666;
+      background-color: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .flip-hint {
+      position: absolute;
+      bottom: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: rgba(44, 62, 80, 0.7);
+      color: white;
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 0.9em;
+      z-index: 5;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .flip-hint:hover {
+      background-color: rgba(44, 62, 80, 0.9);
+      transform: translateX(-50%) translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    @media (max-width: 768px) {
+      .controls {
+        flex-direction: column;
+        gap: 10px;
+      }
+      .domain-selector {
+        width: 100%;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+      .question-container {
+        padding: 15px 20px;
+        margin: 15px;
+      }
+      .option {
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>ASWB LMSW Exam Flashcards</h1>
+  
+  <div class="controls">
+    <select id="domainSelector" class="domain-selector">
+      <option value="all">All domains</option>
+      <option value="domain1">I. HUMAN DEVELOPMENT, DIVERSITY, AND BEHAVIOR IN THE ENVIRONMENT</option>
+      <option value="domain2">II. ASSESSMENT AND INTERVENTION PLANNING</option>
+      <option value="domain3">III. INTERVENTIONS WITH CLIENTS/CLIENT SYSTEMS</option>
+      <option value="domain4">IV. PROFESSIONAL RELATIONSHIPS, VALUES, AND ETHICS</option>
+    </select>
+    <button id="resetBtn" class="btn">Restart</button>
+  </div>
+  
+  <div class="flashcard-container">
+    <div id="flashcard" class="flashcard">
+      <div class="card-inner">
+        <!-- FRONT -->
+        <div class="card-front">
+          <div class="front-header" id="frontHeader">LMSW Exam Question</div>
+          <span class="card-type"></span>
+          <div class="question-container">
+            <div class="question-text"></div>
+            <div class="options">
+              <!-- Options will be inserted here by JavaScript -->
+            </div>
+          </div>
+          <div class="flip-hint" id="frontFlipHint">Click to see answer</div>
+        </div>
+        <!-- BACK -->
+        <div class="card-back">
+          <div class="answer-header" id="backHeader">ANSWER</div>
+          <div class="content-wrapper">
+            <div class="answer-content" id="answerContent"></div>
+          </div>
+          <div class="flip-hint" id="backFlipHint">Click to return to question</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="card-counter">
+    Card <span id="currentCardNum">1</span> of <span id="totalCards">0</span>
+  </div>
+  
+  <div class="navigation">
+    <button id="prevBtn" class="btn">Previous</button>
+    <button id="nextBtn" class="btn">Next</button>
+  </div>
+  
+  <!-- Load flashcard data -->
+  <script src="js/flashcards_domain_1.js"></script>
+  <script src="js/flashcards_domain_2.js"></script>
+  <script src="js/flashcards_domain_3.js"></script>
+  <script src="js/flashcards_domain_4.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
